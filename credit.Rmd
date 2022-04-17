@@ -37,7 +37,7 @@ credit1 <- read_csv('application_record.csv')
 credit2 <- read_csv('credit_record.csv')
 ```
 
-# Preparation and Initial Analysis
+# Preparation, Initial Analysis, and Data Tidying:
 
 The data set originally consists of 2 separate csv files that are connected to each other via the 'ID' column. The first csv file, application record.csv, consists of personal and socio-economic data that is related to an applicant and can help a bank decide whether to issue them a credit card or not. The second csv file, credit_record.csv, consists of past credit card usage behavior of an applicant. It consists of information such as defaults, payment due dates etc. We will perform a 'left join' to merge these two files and so that we are working with the right applicants and will get rid of the extra rows depending on the Null values. 
 
@@ -57,33 +57,88 @@ df2 <- distinct(new_df, ID, .keep_all = TRUE)
 ```
 The above generated data frame(df2) has 25134 rows and 20 variables. 
 
-```{r}
+Removing excess columns or ones that do not pertain to the target variable. 
 
+```{r}
+df2 <- subset( df2, select = -c(FLAG_EMAIL, FLAG_PHONE, FLAG_WORK_PHONE, DAYS_EMPLOYED, DAYS_BIRTH, ID, OCCUPATION_TYPE))
+df2$ID <- 1:nrow(df2)
+df2 <- df2 %>% relocate(ID, .before = CODE_GENDER)
+# Renaming columns to more generic values:
+df2 <- df2 %>% rename(gender = CODE_GENDER, owns_car = FLAG_OWN_CAR, owns_realty = FLAG_OWN_REALTY, children = CNT_CHILDREN, total_income = AMT_INCOME_TOTAL, employment_type = NAME_INCOME_TYPE, education_status = NAME_EDUCATION_TYPE, marital_status = NAME_FAMILY_STATUS, housing_type = NAME_HOUSING_TYPE, owns_mobile = FLAG_MOBIL, family_members = CNT_FAM_MEMBERS, months_due = MONTHS_BALANCE, status = STATUS)
+
+df2$months_due <- df2$months_due * (-1)
 
 ```
 
+Converting all categorical values to ordinal/numeric values for further computation:
 
 
 ```{r}
+df2$gender <- replace(df2$gender, df2$gender=="M", 1)
+df2$gender <- replace(df2$gender, df2$gender=="F", 0)
+df2$gender <- as.numeric(df2$gender)
 
+df2$owns_car <- replace(df2$owns_car, df2$owns_car=="Y", 1)
+df2$owns_car <- replace(df2$owns_car, df2$owns_car=="N", 0)
+df2$owns_car <- as.numeric(df2$owns_car)
+
+df2$owns_realty <- replace(df2$owns_realty, df2$owns_realty=="Y", 1)
+df2$owns_realty <- replace(df2$owns_realty, df2$owns_realty=="N", 0)
+df2$owns_realty <- as.numeric(df2$owns_realty)
+
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Working", 0)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Commercial associate", 1)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="State servant", 2)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Student", 3)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Pensioner", 4)
+df2$employment_type <- as.numeric(df2$employment_type)
+
+df2$education_status <- replace(df2$education_status, df2$education_status=="Secondary / secondary special", 0)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Higher education", 1)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Incomplete higher", 2)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Lower secondary", 3)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Academic degree", 4)
+df2$education_status <- as.numeric(df2$education_status)
+
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Married", 0)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Single / not married", 1)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Civil marriage", 2)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Separated", 3)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Widow", 4)
+df2$marital_status <- as.numeric(df2$marital_status)
+
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="House / apartment", 0)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Rented apartment", 1)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Municipal apartment", 2)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="With parents", 3)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Co-op apartment", 4)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Office apartment", 5)
+df2$housing_type <- as.numeric(df2$housing_type)
+
+df2$status <- replace(df2$status, df2$status=="0", 0)
+df2$status <- replace(df2$status, df2$status=="X", 0)
+df2$status <- replace(df2$status, df2$status=="C", 0)
+df2$status <- replace(df2$status, df2$status=="1", 0)
+df2$status <- replace(df2$status, df2$status=="2", 1)
+df2$status <- replace(df2$status, df2$status=="3", 1)
+df2$status <- replace(df2$status, df2$status=="4", 1)
+df2$status <- replace(df2$status, df2$status=="5", 1)
+df2$status <- as.numeric(df2$status)
 
 ```
 
+The target variable 'status' has the following values:
+0: 1-29 days past due
+1: 30-59 days past due
+2: 60-89 days overdue
+3: 90-119 days overdue
+4: 120-149 days overdue
+5: Overdue or bad debts, write-offs for more than 150 days 
+C: paid off that month 
+X: No loan for the month
 
-
-```{r}
-
-
-```
-
-
-
-```{r}
-
-
-```
-
-
+Any Customers that are overdue for more than 60 days are marked as `risk` or 1 in the target variable. Other customers are marked as 0. 
+The target variable status has a binary outcome, 1 or 0, predicting if an applicant will be a `risk` or not. 
 
 ```{r}
 

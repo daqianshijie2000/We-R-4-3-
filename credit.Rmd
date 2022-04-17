@@ -32,14 +32,60 @@ options(scientific=T, digits = 3)
 # use scipen=999 to prevent scientific notation at all times
 ```
 
-```{r cars}
-summary(cars)
+```{r}
+credit1 <- read_csv('application_record.csv')
+credit2 <- read_csv('credit_record.csv')
 ```
 
-## Including Plots
+# Preparation and Initial Analysis
 
-You can also embed plots, for example:
+The data set originally consists of 2 separate csv files that are connected to each other via the 'ID' column. The first csv file, application record.csv, consists of personal and socio-economic data that is related to an applicant and can help a bank decide whether to issue them a credit card or not. The second csv file, credit_record.csv, consists of past credit card usage behavior of an applicant. It consists of information such as defaults, payment due dates etc. We will perform a 'left join' to merge these two files and so that we are working with the right applicants and will get rid of the extra rows depending on the Null values. 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+df <- merge(credit1, credit2, by = 'ID', all.x = TRUE)
+```
+
+Checking NA values in the updated dataframe and performing cleanup in the dataframe columns. 
+
+```{r}
+sum(is.na(df$OCCUPATION_TYPE)) # 'Occupation_type' has nearly 350000 na values in the original dataframe, along with 'Status' and 'months_balance'.
+# Removing the NA values from the above columns:
+new_df <- na.omit(df, c("STATUS", "MONTHS_BALANCE", "OCCUPATION_TYPE"))
+# Making sure the dataframe has distinct values: 
+df2 <- distinct(new_df, ID, .keep_all = TRUE)
+
+```
+The above generated data frame(df2) has 25134 rows and 20 variables. 
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+
+
+```{r}
+
+
 ```

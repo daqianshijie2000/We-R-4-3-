@@ -240,34 +240,90 @@ plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
 Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable:
 
 
-### Exhaustive search  
+### Performing Exhaustive Search  
 
-Model selection by exhaustive (default) search.
-The plot will essentially show the Adjust R^2 when using the variables across the bottom
+Model selection by exhaustive (default) search, forward or backward stepwise, or sequential replacement.
+The plot will essentially show the Adjusted R^2 when using the variables across the bottom
 
 ```{r}
 library(ISLR)
 
 loadPkg("leaps")
 #This is essentially best fit 
-reg.best10 <- regsubsets(status~. , data = df2_bal, nvmax = 10, nbest = 1, method = "exhaustive")  # leaps::regsubsets() 
-plot(reg.best10, scale = "adjr2", main = "Adjusted R^2")
-plot(reg.best10, scale = "r2", main = "R^2")
-# In the "leaps" package, we can use scale=c("bic","Cp","adjr2","r2")
-plot(reg.best10, scale = "bic", main = "BIC")
-plot(reg.best10, scale = "Cp", main = "Cp")
-summary(reg.best10)
+reg_best10 <- regsubsets(status~. , data = df2_bal, nvmax = 10, nbest = 1, method = "exhaustive")  # leaps::regsubsets() 
+plot(reg_best10, scale = "adjr2", main = "Adjusted R^2")
+plot(reg_best10, scale = "r2", main = "R^2")
+plot(reg_best10, scale = "bic", main = "BIC")
+plot(reg_best10, scale = "Cp", main = "Cp")
+summary(reg_best10)
 
 
 ```
 
+The plots above explain that 'owns_car', 'children', 'marital_status', 'months_due', 'owns_mobile' and 'total_income' cause the most variance on the target variable. 
+
+We will go ahead and create a logistic model explaining how these selected variables have an effect on the target variable(status) and will compare the new models accuracy with the earlier model. 
+
+Creating an updated logit model with the train data set:
+
+```{r logit_2}
+model_2 <- glm(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), data = train, family = binomial)
+summary(model_2)
+```
+
+Predicting the target values using the generated model against the test data set:
+
+```{r}
+predict_set_2 <- predict(model_2, test, type = 'response')
+```
+
+Now, comparing the original values in the test set with the newly generated predicted values:
+
+```{r}
+table(test$status, predict_set_2 > 0.5)
+```
+ y axis - truth values
+ x axis - predicted values
+
+
+                         predicted 
+                   0                  1
+ Actual 0   True Negative  TN      False Positive FP
+ Actual 1   False Negative FN      True Positive  TP
+ 
+
+488 customers were predicted as 0 or not risk and 488 times they were predicted as not risk by the model.
+328 customers were 1 or risk but 328 customers were predicted as not risk or 0 by the model.
+304 customers were 0 or not risk but 304 customers were predicted as risk or 1 by the model. 
+477 customers were 1 or risk and 477 times they were predicted as risk or 1 by the model. 
+
+
+Now, calculating the Accuracy, precision and recall of the generated model:
+
+ Accuracy    = (TP + TN) / Total
+ Precision   = TP / (TP + FP)
+ Recall rate = TP / (TP + FN) = Sensitivity
+ Specificity = TN / (TN + FP)
+ F1_score is the "harmonic mean" of precision and recall
+          F1 = 2 (precision)(recall)/(precision + recall)
 
 
 ```{r}
-
-
+Accuracy = .604
+Precision = .611
+Recall = .519
 ```
 
+This surprisingly performed worse than the original model. Hence, we will stick with the original model for the prediction. 
+
+Generating the ROC:
+```{r}
+library(ROCR)
+ROCRpred_2 <- prediction(predict_set_2, test$status)
+ROCRperf_2 <- performance(ROCRpred, 'tpr','fpr')
+plot(ROCRperf_2, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+```
 
 
 

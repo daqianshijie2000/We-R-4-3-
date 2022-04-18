@@ -57,7 +57,7 @@ df2 <- distinct(new_df, ID, .keep_all = TRUE)
 ```
 The above generated data frame(df2) has 25134 rows and 20 variables. 
 
-Removing excess columns or ones that do not pertain to the target variable. 
+Removing excess columns or ones that do not pertain to the target variable at all.  
 
 ```{r}
 df2 <- subset( df2, select = -c(FLAG_EMAIL, FLAG_PHONE, FLAG_WORK_PHONE, DAYS_EMPLOYED, DAYS_BIRTH, ID, OCCUPATION_TYPE))
@@ -159,7 +159,7 @@ Now, the data set is completely balanced with the target variable having 3960 cu
 
 
 
-Splitting the model into train and test data sets using the caTools library:
+Splitting the model into train and test data sets using the 'caTools' library:
 ```{r}
 library(caTools)
 split <- sample.split(df2_bal$status, SplitRatio = 0.80)
@@ -232,5 +232,78 @@ library(ROCR)
 ROCRpred <- prediction(predict_set, test$status)
 ROCRperf <- performance(ROCRpred, 'tpr','fpr')
 plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+```
+
+# Feature Selection:
+  
+Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable:
+
+
+### Exhaustive search  
+
+Model selection by exhaustive (default) search.
+The plot will essentially show the Adjust R^2 when using the variables across the bottom
+
+```{r}
+library(ISLR)
+
+loadPkg("leaps")
+#This is essentially best fit 
+reg.best10 <- regsubsets(status~. , data = df2_bal, nvmax = 10, nbest = 1, method = "exhaustive")  # leaps::regsubsets() 
+plot(reg.best10, scale = "adjr2", main = "Adjusted R^2")
+plot(reg.best10, scale = "r2", main = "R^2")
+# In the "leaps" package, we can use scale=c("bic","Cp","adjr2","r2")
+plot(reg.best10, scale = "bic", main = "BIC")
+plot(reg.best10, scale = "Cp", main = "Cp")
+summary(reg.best10)
+
+
+```
+
+
+
+```{r}
+
+
+```
+
+
+
+
+```{r}
+
+
+```
+
+
+
+
+```{r}
+
+
+```
+
+
+
+
+```{r}
+
+
+```
+
+
+
+
+```{r}
+
+
+```
+
+
+
+
+```{r}
+
 
 ```

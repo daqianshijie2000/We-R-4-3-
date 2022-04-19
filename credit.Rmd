@@ -345,7 +345,45 @@ auc(ROC_prob_2)
 
 
 ```{r}
+# Fitting a Classification Tree
+library(tree)
+tree.credit <- tree(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), df2_bal)
+summary(tree.credit)
+# Residual mean deviance:  0.405 = 3230 / 7970 
+# Misclassification error rate: 0.0764 = 610 / 7986 
+plot(tree.credit)
+text(tree.credit, all=TRUE, cex=.8)
 
+#using train and test sets in chunks above
+tree.train <- tree(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), train)
+status.test <- test$status
+tree.pred <- predict(tree.train, test,type = "class")
+table(tree.pred , status.test)
+# find classification rate
+# (769+695)/1597= 0.917
+
+# want to improve the classfication rate
+# using cross validation to prune tree
+set.seed (11)
+cv.credit <- cv.tree(tree.train, 
+                       FUN =prune.misclass)
+names(cv.credit)
+#find size with the min dev
+cv.credit$size
+cv.credit$dev
+
+par(mfrow = c(1, 2))
+plot(cv.credit$size , cv.credit$dev, type = "b")
+plot(cv.credit$k, cv.credit$dev, type = "b")
+
+#prune with size=16
+#prune.credit <- prune.misclass(tree.credit , best = 16)
+#plot(prune.credit)
+#text(prune.credit, pretty = 0)
+#tree.pred2 <- predict(prune.credit , test , type = "class")
+#table(tree.pred2 ,status.test)
+
+# In this case, we won't prune tree because it is already the best choice.
 
 ```
 

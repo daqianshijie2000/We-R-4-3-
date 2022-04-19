@@ -228,10 +228,15 @@ Recall = 0.683
 
 Generating the ROC:
 ```{r}
+library(pROC)
 library(ROCR)
 ROCRpred <- prediction(predict_set, test$status)
 ROCRperf <- performance(ROCRpred, 'tpr','fpr')
 plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+
+ROC_prob = roc(test$status, predict_set, type = "response")
+auc(ROC_prob)
 
 ```
 
@@ -322,6 +327,10 @@ library(ROCR)
 ROCRpred_2 <- prediction(predict_set_2, test$status)
 ROCRperf_2 <- performance(ROCRpred, 'tpr','fpr')
 plot(ROCRperf_2, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+ROC_prob_2 = roc(test$status, predict_set_2, type = "response")
+auc(ROC_prob_2)
+
 
 ```
 

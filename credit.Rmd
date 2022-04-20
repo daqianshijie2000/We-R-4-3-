@@ -4,7 +4,7 @@ author: "We-R-4(3)"
 date: "`r Sys.Date()`"
 output:
   html_document:
-    code_folding: hide
+    code_folding: show
     number_sections: true
     toc: yes
     toc_depth: 3
@@ -40,7 +40,6 @@ credit2 <- read_csv('credit_record.csv')
 # Preparation, Initial Analysis, and Data Tidying:
 
 The data set originally consists of 2 separate csv files that are connected to each other via the 'ID' column. The first csv file, application record.csv, consists of personal and socio-economic data that is related to an applicant and can help a bank decide whether to issue them a credit card or not. The second csv file, credit_record.csv, consists of past credit card usage behavior of an applicant. It consists of information such as defaults, payment due dates etc. We will perform a 'left join' to merge these two files and so that we are working with the right applicants and will get rid of the extra rows depending on the Null values. 
-
 ```{r}
 df <- merge(credit1, credit2, by = 'ID', all.x = TRUE)
 ```
@@ -55,7 +54,7 @@ new_df <- na.omit(df, c("STATUS", "MONTHS_BALANCE", "OCCUPATION_TYPE"))
 df2 <- distinct(new_df, ID, .keep_all = TRUE)
 
 ```
-The above generated data frame(df2) has 25134 rows and 20 variables. 
+The above generated `data frame(df2)` has 25134 rows and 20 variables. 
 
 Removing excess columns or ones that do not pertain to the target variable at all.  
 
@@ -127,7 +126,7 @@ df2$status <- as.factor(df2$status)
 
 ```
 
-## Target variable
+## Target variable and Data set balancing
 
 The target variable 'status' has the following values:
 0: 1-29 days past due
@@ -140,7 +139,7 @@ C: paid off that month
 X: No loan for the month
 
 Any Customers that are overdue for more than 60 days are marked as `risk` or 1 in the target variable. Other customers are marked as 0. 
-The target variable status has a binary outcome, 1 or 0, predicting if an applicant will be a `risk` or not.
+The target variable status has a binary outcome, 1 or 0, predicting if an applicant will be a `risk` or `not a risk`.
 
 
 ```{r}
@@ -149,7 +148,7 @@ table(df2$status)
 
 We can see that the dataset is highly unbalanced as there are 25068 customers that have paid off the debt and just 66 customers that are marked as 'risk'. The positive class (risk customers) just account for 0.263% of the overall dataset. 
 
-We will balance the dataset using a minority oversampling technique called SMOTE: Synthetic Minority Oversampling Technique. This technique uses  KNN or K-nearest neighbors algorithm to generate synthetic values of the under represented target variable. 
+We will balance the dataset using a minority oversampling technique called `SMOTE: Synthetic Minority Oversampling Technique`. This technique uses  KNN or K-nearest neighbors algorithm to generate synthetic values of the under represented target variable. 
 ```{r}
 library(DMwR)
 df2_bal <- SMOTE(status~., df2, perc.over=6000, perc.under=100, k = 5)
@@ -157,7 +156,7 @@ table(df2_bal$status)
 ```
 Now, the data set is completely balanced with the target variable having 3960 customers marked as '0' or 'non risk' and 4026 customers marked as '1' or 'risk'. 
 
-#Showing quick EDA for the df2_bal to see the data nomarility 
+## Checking data normality on the df2_bal set 
 ```{r}
 loadPkg("psych")
 pairs(df2_bal)
@@ -167,11 +166,13 @@ pairs.panels(df2_bal,
              density = TRUE,  # show density plots
              ellipses = TRUE # show correlation ellipses
              )
-unloadPkg(psych)
+#unloadPkg(psych)
 ```
-#Chi-square tests
+# Chi-squared tests
+
+## To test if the data support that applicant's owned reality much affects status
 ```{r}
-#To test if the data support that applicant's owned reality much affects status
+
 own_realty_status_table = xtabs(~owns_realty+status, data = df2_bal)
 own_realty_status_table
 ```
@@ -179,8 +180,8 @@ own_realty_status_table
 chisqres_own_realty = chisq.test(own_realty_status_table)
 chisqres_own_realty
 ```
+## To test if the data support that applicant's total income much affects status
 ```{R}
-#To test if the data support that applicant's total income much affects status
 totalincome_statustable = xtabs(~total_income + status, data = df2_bal)
 totalincome_statustable
 ```
@@ -188,8 +189,8 @@ totalincome_statustable
 chisqres_totalincome = chisq.test(totalincome_statustable)
 chisqres_totalincome
 ```
+## To test if the data support that applicant's marital status much affects status
 ```{R}
-#To test if the data support that applicant's marital status much affects status
 maritalstatus_status_table = xtabs(~marital_status+status, data = df2_bal)
 maritalstatus_status_table 
 ```
@@ -197,8 +198,8 @@ maritalstatus_status_table
 chisqres_maritalstatus = chisq.test(maritalstatus_status_table )
 chisqres_maritalstatus
 ```
+## To test if the data support that applicant's education status much affects status
 ```{R}
-#To test if the data support that applicant's education status much affects status
 education_status_table = xtabs(~education_status + status, data = df2_bal)
 education_status_table
 ```
@@ -206,8 +207,8 @@ education_status_table
 chisqres_education = chisq.test(education_status_table)
 chisqres_education 
 ```
+## To test if the data support that applicant's months_due much affects status
 ```{R}
-#To test if the data support that applicant's months_due much affects status
 months_due_status_table = xtabs(~months_due + status, data = df2_bal)
 months_due_status_table 
 ```
@@ -215,9 +216,12 @@ months_due_status_table
 chisqres_monthsBalance = chisq.test(months_due_status_table)
 chisqres_monthsBalance
 ```
-# We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which rejects null Hypothesis. That means the five variables have no effect on status. 
+### We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which rejects null Hypothesis. That means the five variables have no effect on status. 
+
+# Splitting the balanced set into Train/Test:
 
 Splitting the model into train and test data sets using the 'caTools' library:
+
 ```{r}
 library(caTools)
 split <- sample.split(df2_bal$status, SplitRatio = 0.80)
@@ -230,9 +234,9 @@ test <- subset(df2_bal, split == FALSE)
 as.data.frame(table(train$status))
 
 ```
+# Logit Model 1:
 
-
-Creating a Logistic regression model with the train dataset:
+## Creating a Logistic regression model with the train dataset:
 
 ```{r logit}
 model <- glm(status~., data = train, family = binomial)
@@ -240,7 +244,7 @@ summary(model)
 ```
 
 
-Predicting the target values using the generated model against the test data set:
+## Predicting the target values using the generated model against the test data set:
 
 ```{r}
 predict_set <- predict(model, test, type = 'response')
@@ -251,40 +255,41 @@ Now, comparing the original values in the test set with the predicted values:
 ```{r}
 table(test$status, predict_set > 0.5)
 ```
- y axis - truth values
- x axis - predicted values
-
-
-                         predicted 
-                   0                  1
- Actual 0   True Negative  TN      False Positive FP
- Actual 1   False Negative FN      True Positive  TP
+* y axis - truth values
+* x axis - predicted values
  
 
-532 customers were predicted as 0 or not risk and 532 times they were predicted as not risk by the model.
-255 customers were 1 or risk but 255 customers were predicted as not risk or 0 by the model.
-260 customers were 0 or not risk but 260 customers were predicted as risk or 1 by the model. 
-550 customers were 1 or risk and 550 times they were predicted as risk or 1 by the model. 
+* 532 customers were predicted as 0 or not risk and 532 times they were predicted as not risk by the model.
+* 255 customers were 1 or risk but 255 customers were predicted as not risk or 0 by the model.
+* 260 customers were 0 or not risk but 260 customers were predicted as risk or 1 by the model. 
+* 550 customers were 1 or risk and 550 times they were predicted as risk or 1 by the model. 
 
 
 Now, calculating the Accuracy, precision and recall of the generated model:
 
- Accuracy    = (TP + TN) / Total
- Precision   = TP / (TP + FP)
- Recall rate = TP / (TP + FN) = Sensitivity
- Specificity = TN / (TN + FP)
- F1_score is the "harmonic mean" of precision and recall
-          F1 = 2 (precision)(recall)/(precision + recall)
+
 
 
 ```{r}
+#                         predicted 
+#                   0                  1
+# Actual 0   True Negative  TN      False Positive FP
+# Actual 1   False Negative FN      True Positive  TP
+#
+#
+# Accuracy    = (TP + TN) / Total
+# Precision   = TP / (TP + FP)
+# Recall rate = TP / (TP + FN) = Sensitivity
+# Specificity = TN / (TN + FP)
+# F1_score is the "harmonic mean" of precision and recall
+#          F1 = 2 (precision)(recall)/(precision + recall)
 Accuracy = 0.678
 Precision = .679
 Recall = 0.683
 ```
 
 
-Generating the ROC:
+## Generating the ROC:
 ```{r}
 library(pROC)
 library(ROCR)
@@ -303,7 +308,7 @@ auc(ROC_prob)
 Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable:
 
 
-### Performing Exhaustive Search  
+## Performing Exhaustive Search  
 
 Model selection by exhaustive (default) search, forward or backward stepwise, or sequential replacement.
 The plot will essentially show the Adjusted R^2 when using the variables across the bottom
@@ -327,7 +332,7 @@ The plots above explain that 'owns_car', 'children', 'marital_status', 'months_d
 
 We will go ahead and create a logistic model explaining how these selected variables have an effect on the target variable(status) and will compare the new models accuracy with the earlier model. 
 
-Creating an updated logit model with the train data set:
+# Logit Model 2:
 
 ```{r logit_2}
 model_2 <- glm(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), data = train, family = binomial)
@@ -345,41 +350,43 @@ Now, comparing the original values in the test set with the newly generated pred
 ```{r}
 table(test$status, predict_set_2 > 0.5)
 ```
- y axis - truth values
- x axis - predicted values
+* y axis - truth values
+* x axis - predicted values
 
-
-                         predicted 
-                   0                  1
- Actual 0   True Negative  TN      False Positive FP
- Actual 1   False Negative FN      True Positive  TP
  
 
-488 customers were predicted as 0 or not risk and 488 times they were predicted as not risk by the model.
-328 customers were 1 or risk but 328 customers were predicted as not risk or 0 by the model.
-304 customers were 0 or not risk but 304 customers were predicted as risk or 1 by the model. 
-477 customers were 1 or risk and 477 times they were predicted as risk or 1 by the model. 
+* 488 customers were predicted as 0 or not risk and 488 times they were predicted as not risk by the model.
+* 328 customers were 1 or risk but 328 customers were predicted as not risk or 0 by the model.
+* 304 customers were 0 or not risk but 304 customers were predicted as risk or 1 by the model. 
+* 477 customers were 1 or risk and 477 times they were predicted as risk or 1 by the model. 
 
 
 Now, calculating the Accuracy, precision and recall of the generated model:
 
- Accuracy    = (TP + TN) / Total
- Precision   = TP / (TP + FP)
- Recall rate = TP / (TP + FN) = Sensitivity
- Specificity = TN / (TN + FP)
- F1_score is the "harmonic mean" of precision and recall
-          F1 = 2 (precision)(recall)/(precision + recall)
 
 
 ```{r}
+
+#                         predicted 
+#                   0                  1
+# Actual 0   True Negative  TN      False Positive FP
+# Actual 1   False Negative FN      True Positive  TP
+#
+#
+# Accuracy    = (TP + TN) / Total
+# Precision   = TP / (TP + FP)
+# Recall rate = TP / (TP + FN) = Sensitivity
+# Specificity = TN / (TN + FP)
+# F1_score is the "harmonic mean" of precision and recall
+#          F1 = 2 (precision)(recall)/(precision + recall)
 Accuracy = .604
 Precision = .611
 Recall = .519
 ```
 
-This surprisingly performed worse than the original model. Hence, we will stick with the original model for the prediction. 
+This surprisingly performed worse than the original model. Hence, we will stick with the original model for the prediction.
 
-Generating the ROC:
+## Generating the ROC:
 ```{r}
 library(ROCR)
 ROCRpred_2 <- prediction(predict_set_2, test$status)
@@ -392,14 +399,9 @@ auc(ROC_prob_2)
 
 ```
 
+# Classification Tree Modeling:
 
-
-```{r}
-
-
-```
-
-
+Generating a Classification Tree Model for the balanced data set. 
 
 
 ```{r}
@@ -420,8 +422,10 @@ table(tree.pred , status.test)
 # find classification rate
 # (769+695)/1597= 0.917
 
-# want to improve the classfication rate
-# using cross validation to prune tree
+```
+
+## Using cross validation to Prune Tree
+```{r}
 set.seed (11)
 cv.credit <- cv.tree(tree.train, 
                        FUN =prune.misclass)
@@ -440,31 +444,8 @@ plot(cv.credit$k, cv.credit$dev, type = "b")
 #text(prune.credit, pretty = 0)
 #tree.pred2 <- predict(prune.credit , test , type = "class")
 #table(tree.pred2 ,status.test)
-
-# In this case, we won't prune tree because it is already the best choice.
-
 ```
+In this case, we won't prune tree because it is already the best choice.
 
+`Model generates a 91% accuracy which is much higher than the Logit models.`
 
-
-
-```{r}
-
-
-```
-
-
-
-
-```{r}
-
-
-```
-
-
-
-
-```{r}
-
-
-```

@@ -157,7 +157,65 @@ table(df2_bal$status)
 ```
 Now, the data set is completely balanced with the target variable having 3960 customers marked as '0' or 'non risk' and 4026 customers marked as '1' or 'risk'. 
 
-
+#Showing quick EDA for the df2_bal to see the data nomarility 
+```{r}
+loadPkg("psych")
+pairs(df2_bal)
+pairs.panels(df2_bal, 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB", # set histogram color, can use "#22AFBB", "red",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+             )
+unloadPkg(psych)
+```
+#Chi-square tests
+```{r}
+#To test if the data support that applicant's owned reality much affects status
+own_realty_status_table = xtabs(~owns_realty+status, data = df2_bal)
+own_realty_status_table
+```
+```{r }
+chisqres_own_realty = chisq.test(own_realty_status_table)
+chisqres_own_realty
+```
+```{R}
+#To test if the data support that applicant's total income much affects status
+totalincome_statustable = xtabs(~total_income + status, data = df2_bal)
+totalincome_statustable
+```
+```{r }
+chisqres_totalincome = chisq.test(totalincome_statustable)
+chisqres_totalincome
+```
+```{R}
+#To test if the data support that applicant's marital status much affects status
+maritalstatus_status_table = xtabs(~marital_status+status, data = df2_bal)
+maritalstatus_status_table 
+```
+```{r }
+chisqres_maritalstatus = chisq.test(maritalstatus_status_table )
+chisqres_maritalstatus
+```
+```{R}
+#To test if the data support that applicant's education status much affects status
+education_status_table = xtabs(~education_status + status, data = df2_bal)
+education_status_table
+```
+```{r }
+chisqres_education = chisq.test(education_status_table)
+chisqres_education 
+```
+```{R}
+#To test if the data support that applicant's months_due much affects status
+months_due_status_table = xtabs(~months_due + status, data = df2_bal)
+months_due_status_table 
+```
+```{r }
+chisqres_monthsBalance = chisq.test(months_due_status_table)
+chisqres_monthsBalance
+```
+# We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which rejects null Hypothesis. That means the five variables have no effect on status. 
 
 Splitting the model into train and test data sets using the 'caTools' library:
 ```{r}

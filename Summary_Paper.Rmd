@@ -28,7 +28,7 @@ credit1 <- read_csv('application_record.csv')
 credit2 <- read_csv('credit_record.csv')
 ```
 
-# **Credit Card Approval Prediction Analysis**
+**Credit Card Approval Prediction Analysis**
 
 # Introduction
 
@@ -201,7 +201,7 @@ unloadPkg(psych)
 
 # Chi-squared tests
 
-We will perform Chi_Squared test to check for any relation between the target variable(y) and the independent variables. 
+We will perform Chi-Squared test to check for any relation between the target variable(y) and the independent variables. 
 
 ## To test if the data support that applicant's owned reality much affects status
 ```{r}
@@ -473,10 +473,10 @@ We fit the data set using the model and the generate predicted values for the te
 We find below that the mis-classification error rate is extremely small with a value of 0.0854
 and the confusion matrix looks like: 
 
-*         status.test
-*           0   1
-*        0 776 116
-*        1  16 689
+         status.test
+           0   1
+        0 776 116
+        1  16 689
 
 * 776 customers were predicted as 0 or not a risk and 776 customers were predicted as not risk by the model.
 * 16 customers were 1 or risk but 16 customers were predicted as not risk or 0 by the model.
@@ -528,15 +528,16 @@ plot(cv.credit$k, cv.credit$dev, type = "b")
 <br>
 In this case, we will not prune the tree because it is already the best choice.
 
-The model performs better than the above two Logistic Regression models and generates approximately a 91% accuracy!
+The model performs better than the above two Logistic Regression models and generates approximately a `91% accuracy`!
 
 
-# Conclusion
+# Conclusion:
 <br>
+
 * Classification Tree Model is best suited for this category of data set.
 * The AUC of LOGIT models were 0.71 and 0.62. This is below our goal of 0.80 or above. 
 * Data set balancing is required to create a well performing model. Without a balanced data set, the model can undergo misclassification. 
-* Chi-Squared test was performed to find any relation between the dependent variable(y) and the regressors. 
+* Chi-Squared test was performed to find any relation between the dependent variable(y) and the regressors. The null model was rejected in all cases. 
 * From Logit Models and Feature Selection, it is observed that factors like Previous Months Balance, Marital Status of a Customer, whether they own a Car and a Mobile Phone, and Number of Children generally increases the likelihood of that Customer being issued a credit card by a bank! 
 
 

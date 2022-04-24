@@ -1,0 +1,451 @@
+---
+title: "Final Project - Intro to Data Science - 6101"
+author: "We-R-4(3)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    code_folding: show
+    number_sections: true
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r include=FALSE}
+# The package "ezids" (EZ Intro to Data Science) includes a lot of the helper functions we developed for the course. 
+# Some of the frequently used functions are loadPkg(), xkabledply(), xkablesummary(), uzscale(), etc.
+library(ezids)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(car)
+# some of common options (and the defaults) are: 
+# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
+# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
+# options(scipen=9, digits = 3) 
+# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
+# use scipen=999 to prevent scientific notation at all times
+```
+
+```{r}
+credit1 <- read_csv('application_record.csv')
+credit2 <- read_csv('credit_record.csv')
+```
+
+# Preparation, Initial Analysis, and Data Tidying:
+
+The data set originally consists of 2 separate csv files that are connected to each other via the 'ID' column. The first csv file, application record.csv, consists of personal and socio-economic data that is related to an applicant and can help a bank decide whether to issue them a credit card or not. The second csv file, credit_record.csv, consists of past credit card usage behavior of an applicant. It consists of information such as defaults, payment due dates etc. We will perform a 'left join' to merge these two files and so that we are working with the right applicants and will get rid of the extra rows depending on the Null values. 
+```{r}
+df <- merge(credit1, credit2, by = 'ID', all.x = TRUE)
+```
+
+Checking NA values in the updated dataframe and performing cleanup in the dataframe columns. 
+
+```{r}
+sum(is.na(df$OCCUPATION_TYPE)) # 'Occupation_type' has nearly 350000 na values in the original dataframe, along with 'Status' and 'months_balance'.
+# Removing the NA values from the above columns:
+new_df <- na.omit(df, c("STATUS", "MONTHS_BALANCE", "OCCUPATION_TYPE"))
+# Making sure the dataframe has distinct values: 
+df2 <- distinct(new_df, ID, .keep_all = TRUE)
+
+```
+The above generated `data frame(df2)` has 25134 rows and 20 variables. 
+
+Removing excess columns or ones that do not pertain to the target variable at all.  
+
+```{r}
+df2 <- subset( df2, select = -c(FLAG_EMAIL, FLAG_PHONE, FLAG_WORK_PHONE, DAYS_EMPLOYED, DAYS_BIRTH, ID, OCCUPATION_TYPE))
+df2$ID <- 1:nrow(df2)
+df2 <- df2 %>% relocate(ID, .before = CODE_GENDER)
+# Renaming columns to more generic values:
+df2 <- df2 %>% rename(gender = CODE_GENDER, owns_car = FLAG_OWN_CAR, owns_realty = FLAG_OWN_REALTY, children = CNT_CHILDREN, total_income = AMT_INCOME_TOTAL, employment_type = NAME_INCOME_TYPE, education_status = NAME_EDUCATION_TYPE, marital_status = NAME_FAMILY_STATUS, housing_type = NAME_HOUSING_TYPE, owns_mobile = FLAG_MOBIL, family_members = CNT_FAM_MEMBERS, months_due = MONTHS_BALANCE, status = STATUS)
+
+df2$months_due <- df2$months_due * (-1)
+
+```
+
+Converting all categorical values to ordinal/numeric values for further computation:
+
+
+```{r}
+df2$gender <- replace(df2$gender, df2$gender=="M", 1)
+df2$gender <- replace(df2$gender, df2$gender=="F", 0)
+df2$gender <- as.numeric(df2$gender)
+
+df2$owns_car <- replace(df2$owns_car, df2$owns_car=="Y", 1)
+df2$owns_car <- replace(df2$owns_car, df2$owns_car=="N", 0)
+df2$owns_car <- as.numeric(df2$owns_car)
+
+df2$owns_realty <- replace(df2$owns_realty, df2$owns_realty=="Y", 1)
+df2$owns_realty <- replace(df2$owns_realty, df2$owns_realty=="N", 0)
+df2$owns_realty <- as.numeric(df2$owns_realty)
+
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Working", 0)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Commercial associate", 1)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="State servant", 2)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Student", 3)
+df2$employment_type <- replace(df2$employment_type, df2$employment_type=="Pensioner", 4)
+df2$employment_type <- as.numeric(df2$employment_type)
+
+df2$education_status <- replace(df2$education_status, df2$education_status=="Secondary / secondary special", 0)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Higher education", 1)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Incomplete higher", 2)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Lower secondary", 3)
+df2$education_status <- replace(df2$education_status, df2$education_status=="Academic degree", 4)
+df2$education_status <- as.numeric(df2$education_status)
+
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Married", 0)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Single / not married", 1)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Civil marriage", 2)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Separated", 3)
+df2$marital_status <- replace(df2$marital_status, df2$marital_status=="Widow", 4)
+df2$marital_status <- as.numeric(df2$marital_status)
+
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="House / apartment", 0)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Rented apartment", 1)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Municipal apartment", 2)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="With parents", 3)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Co-op apartment", 4)
+df2$housing_type <- replace(df2$housing_type, df2$housing_type=="Office apartment", 5)
+df2$housing_type <- as.numeric(df2$housing_type)
+
+df2$status <- replace(df2$status, df2$status=="0", 0)
+df2$status <- replace(df2$status, df2$status=="X", 0)
+df2$status <- replace(df2$status, df2$status=="C", 0)
+df2$status <- replace(df2$status, df2$status=="1", 0)
+df2$status <- replace(df2$status, df2$status=="2", 1)
+df2$status <- replace(df2$status, df2$status=="3", 1)
+df2$status <- replace(df2$status, df2$status=="4", 1)
+df2$status <- replace(df2$status, df2$status=="5", 1)
+df2$status <- as.factor(df2$status)
+
+```
+
+## Target variable and Data set balancing
+
+The target variable 'status' has the following values:
+0: 1-29 days past due
+1: 30-59 days past due
+2: 60-89 days overdue
+3: 90-119 days overdue
+4: 120-149 days overdue
+5: Overdue or bad debts, write-offs for more than 150 days 
+C: paid off that month 
+X: No loan for the month
+
+Any Customers that are overdue for more than 60 days are marked as `risk` or 1 in the target variable. Other customers are marked as 0. 
+The target variable status has a binary outcome, 1 or 0, predicting if an applicant will be a `risk` or `not a risk`.
+
+
+```{r}
+table(df2$status)
+```
+
+We can see that the dataset is highly unbalanced as there are 25068 customers that have paid off the debt and just 66 customers that are marked as 'risk'. The positive class (risk customers) just account for 0.263% of the overall dataset. 
+
+We will balance the dataset using a minority oversampling technique called `SMOTE: Synthetic Minority Oversampling Technique`. This technique uses  KNN or K-nearest neighbors algorithm to generate synthetic values of the under represented target variable. 
+```{r}
+library(DMwR)
+df2_bal <- SMOTE(status~., df2, perc.over=6000, perc.under=100, k = 5)
+table(df2_bal$status)
+```
+Now, the data set is completely balanced with the target variable having 3960 customers marked as '0' or 'non risk' and 4026 customers marked as '1' or 'risk'. 
+
+## Checking data normality on the df2_bal set 
+```{r}
+loadPkg("psych")
+pairs(df2_bal)
+pairs.panels(df2_bal, 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB", # set histogram color, can use "#22AFBB", "red",
+             density = TRUE,  # show density plots
+             ellipses = TRUE # show correlation ellipses
+             )
+#unloadPkg(psych)
+```
+# Chi-squared tests
+
+## To test if the data support that applicant's owned reality much affects status
+```{r}
+
+own_realty_status_table = xtabs(~owns_realty+status, data = df2_bal)
+own_realty_status_table
+```
+```{r }
+chisqres_own_realty = chisq.test(own_realty_status_table)
+chisqres_own_realty
+```
+## To test if the data support that applicant's total income much affects status
+```{R}
+totalincome_statustable = xtabs(~total_income + status, data = df2_bal)
+totalincome_statustable
+```
+```{r }
+chisqres_totalincome = chisq.test(totalincome_statustable)
+chisqres_totalincome
+```
+## To test if the data support that applicant's marital status much affects status
+```{R}
+maritalstatus_status_table = xtabs(~marital_status+status, data = df2_bal)
+maritalstatus_status_table 
+```
+```{r }
+chisqres_maritalstatus = chisq.test(maritalstatus_status_table )
+chisqres_maritalstatus
+```
+## To test if the data support that applicant's education status much affects status
+```{R}
+education_status_table = xtabs(~education_status + status, data = df2_bal)
+education_status_table
+```
+```{r }
+chisqres_education = chisq.test(education_status_table)
+chisqres_education 
+```
+## To test if the data support that applicant's months_due much affects status
+```{R}
+months_due_status_table = xtabs(~months_due + status, data = df2_bal)
+months_due_status_table 
+```
+```{r }
+chisqres_monthsBalance = chisq.test(months_due_status_table)
+chisqres_monthsBalance
+```
+### We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which rejects null Hypothesis. That means the five variables have no effect on status. 
+
+# Splitting the balanced set into Train/Test:
+
+Splitting the model into train and test data sets using the 'caTools' library:
+
+```{r}
+library(caTools)
+split <- sample.split(df2_bal$status, SplitRatio = 0.80)
+
+train <- subset(df2_bal, split == TRUE)
+test <- subset(df2_bal, split == FALSE)
+
+
+## Let's check the count of unique value in the target variable
+as.data.frame(table(train$status))
+
+```
+# Logit Model 1:
+
+## Creating a Logistic regression model with the train dataset:
+
+```{r logit}
+model <- glm(status~., data = train, family = binomial)
+summary(model)
+```
+
+
+## Predicting the target values using the generated model against the test data set:
+
+```{r}
+predict_set <- predict(model, test, type = 'response')
+```
+
+Now, comparing the original values in the test set with the predicted values:
+
+```{r}
+table(test$status, predict_set > 0.5)
+```
+* y axis - truth values
+* x axis - predicted values
+ 
+
+* 532 customers were predicted as 0 or not risk and 532 times they were predicted as not risk by the model.
+* 255 customers were 1 or risk but 255 customers were predicted as not risk or 0 by the model.
+* 260 customers were 0 or not risk but 260 customers were predicted as risk or 1 by the model. 
+* 550 customers were 1 or risk and 550 times they were predicted as risk or 1 by the model. 
+
+
+Now, calculating the Accuracy, precision and recall of the generated model:
+
+
+
+
+```{r}
+#                         predicted 
+#                   0                  1
+# Actual 0   True Negative  TN      False Positive FP
+# Actual 1   False Negative FN      True Positive  TP
+#
+#
+# Accuracy    = (TP + TN) / Total
+# Precision   = TP / (TP + FP)
+# Recall rate = TP / (TP + FN) = Sensitivity
+# Specificity = TN / (TN + FP)
+# F1_score is the "harmonic mean" of precision and recall
+#          F1 = 2 (precision)(recall)/(precision + recall)
+Accuracy = 0.678
+Precision = .679
+Recall = 0.683
+```
+
+
+## Generating the ROC:
+```{r}
+library(pROC)
+library(ROCR)
+ROCRpred <- prediction(predict_set, test$status)
+ROCRperf <- performance(ROCRpred, 'tpr','fpr')
+plot(ROCRperf, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+
+ROC_prob = roc(test$status, predict_set, type = "response")
+auc(ROC_prob)
+
+```
+
+# Feature Selection:
+  
+Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable:
+
+
+## Performing Exhaustive Search  
+
+Model selection by exhaustive (default) search, forward or backward stepwise, or sequential replacement.
+The plot will essentially show the Adjusted R^2 when using the variables across the bottom
+
+```{r}
+library(ISLR)
+
+loadPkg("leaps")
+#This is essentially best fit 
+reg_best10 <- regsubsets(status~. , data = df2_bal, nvmax = 10, nbest = 1, method = "exhaustive")  # leaps::regsubsets() 
+plot(reg_best10, scale = "adjr2", main = "Adjusted R^2")
+plot(reg_best10, scale = "r2", main = "R^2")
+plot(reg_best10, scale = "bic", main = "BIC")
+plot(reg_best10, scale = "Cp", main = "Cp")
+summary(reg_best10)
+
+
+```
+
+The plots above explain that 'owns_car', 'children', 'marital_status', 'months_due', 'owns_mobile' and 'total_income' cause the most variance on the target variable. 
+
+We will go ahead and create a logistic model explaining how these selected variables have an effect on the target variable(status) and will compare the new models accuracy with the earlier model. 
+
+# Logit Model 2:
+
+```{r logit_2}
+model_2 <- glm(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), data = train, family = binomial)
+summary(model_2)
+```
+
+Predicting the target values using the generated model against the test data set:
+
+```{r}
+predict_set_2 <- predict(model_2, test, type = 'response')
+```
+
+Now, comparing the original values in the test set with the newly generated predicted values:
+
+```{r}
+table(test$status, predict_set_2 > 0.5)
+```
+* y axis - truth values
+* x axis - predicted values
+
+ 
+
+* 488 customers were predicted as 0 or not risk and 488 times they were predicted as not risk by the model.
+* 328 customers were 1 or risk but 328 customers were predicted as not risk or 0 by the model.
+* 304 customers were 0 or not risk but 304 customers were predicted as risk or 1 by the model. 
+* 477 customers were 1 or risk and 477 times they were predicted as risk or 1 by the model. 
+
+
+Now, calculating the Accuracy, precision and recall of the generated model:
+
+
+
+```{r}
+
+#                         predicted 
+#                   0                  1
+# Actual 0   True Negative  TN      False Positive FP
+# Actual 1   False Negative FN      True Positive  TP
+#
+#
+# Accuracy    = (TP + TN) / Total
+# Precision   = TP / (TP + FP)
+# Recall rate = TP / (TP + FN) = Sensitivity
+# Specificity = TN / (TN + FP)
+# F1_score is the "harmonic mean" of precision and recall
+#          F1 = 2 (precision)(recall)/(precision + recall)
+Accuracy = .604
+Precision = .611
+Recall = .519
+```
+
+This surprisingly performed worse than the original model. Hence, we will stick with the original model for the prediction.
+
+## Generating the ROC:
+```{r}
+library(ROCR)
+ROCRpred_2 <- prediction(predict_set_2, test$status)
+ROCRperf_2 <- performance(ROCRpred, 'tpr','fpr')
+plot(ROCRperf_2, colorize = TRUE, text.adj = c(-0.2,1.7))
+
+ROC_prob_2 = roc(test$status, predict_set_2, type = "response")
+auc(ROC_prob_2)
+
+
+```
+
+# Classification Tree Modeling:
+
+Generating a Classification Tree Model for the balanced data set. 
+
+
+```{r}
+# Fitting a Classification Tree
+library(tree)
+tree.credit <- tree(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), df2_bal)
+summary(tree.credit)
+# Residual mean deviance:  0.405 = 3230 / 7970 
+# Misclassification error rate: 0.0764 = 610 / 7986 
+plot(tree.credit)
+text(tree.credit, all=TRUE, cex=.8)
+
+#using train and test sets in chunks above
+tree.train <- tree(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), train)
+status.test <- test$status
+tree.pred <- predict(tree.train, test,type = "class")
+table(tree.pred , status.test)
+# find classification rate
+# (769+695)/1597= 0.917
+
+```
+
+## Using cross validation to Prune Tree
+```{r}
+set.seed (11)
+cv.credit <- cv.tree(tree.train, 
+                       FUN =prune.misclass)
+names(cv.credit)
+#find size with the min dev
+cv.credit$size
+cv.credit$dev
+
+par(mfrow = c(1, 2))
+plot(cv.credit$size , cv.credit$dev, type = "b")
+plot(cv.credit$k, cv.credit$dev, type = "b")
+
+#prune with size=16
+#prune.credit <- prune.misclass(tree.credit , best = 16)
+#plot(prune.credit)
+#text(prune.credit, pretty = 0)
+#tree.pred2 <- predict(prune.credit , test , type = "class")
+#table(tree.pred2 ,status.test)
+```
+In this case, we won't prune tree because it is already the best choice.
+
+`Model generates a 91% accuracy which is much higher than the Logit models.`
+

@@ -1,6 +1,6 @@
 ---
-title: "Final Project - Intro to Data Science - 6101"
-author: "We-R-4(3)"
+title: "Final Project Research Summary - Intro to Data Science - 6101"
+author: "Akshat Saini, Daqian Dang, Devon Wan"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -15,48 +15,56 @@ output:
 ---
 
 ```{r include=FALSE}
-# The package "ezids" (EZ Intro to Data Science) includes a lot of the helper functions we developed for the course. 
-# Some of the frequently used functions are loadPkg(), xkabledply(), xkablesummary(), uzscale(), etc.
+knitr::opts_chunk$set(warning = F, results = "hide", message = F)
+options(scientific=T, digits = 3) 
 library(ezids)
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(car)
-# some of common options (and the defaults) are: 
-# include=T, eval=T, echo=T, results='hide'/'asis'/'markup',..., collapse=F, warning=T, message=T, error=T, cache=T, fig.width=6, fig.height=4, fig.dim=c(6,4) #inches, fig.align='left'/'center','right', 
-# knitr::opts_chunk$set(warning = F, results = "markup", message = F)
-knitr::opts_chunk$set(warning = F, results = "hide", message = F)
-options(scientific=T, digits = 3) 
-# options(scipen=9, digits = 3) 
-# ‘scipen’: integer. A penalty to be applied when deciding to print numeric values in fixed or exponential notation.  Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than ‘scipen’ digits wider.
-# use scipen=999 to prevent scientific notation at all times
-```
 
-```{r}
+# Loading the data set
 credit1 <- read_csv('application_record.csv')
 credit2 <- read_csv('credit_record.csv')
 ```
 
-# Preparation, Initial Analysis, and Data Tidying:
+# **Credit Card Approval Prediction Analysis**
 
-The data set originally consists of 2 separate csv files that are connected to each other via the 'ID' column. The first csv file, application record.csv, consists of personal and socio-economic data that is related to an applicant and can help a bank decide whether to issue them a credit card or not. The second csv file, credit_record.csv, consists of past credit card usage behavior of an applicant. It consists of information such as defaults, payment due dates etc. We will perform a 'left join' to merge these two files and so that we are working with the right applicants and will get rid of the extra rows depending on the Null values. 
+# Introduction
+
+Credit scores are a common risk control method used in the financial industry. It uses personal information and data submitted by credit card customers to predict the probability of any future defaults or credit card borrowings. The bank is then able to decide whether to issue a credit card to the applicant or simply deny. Credit scores can objectively quantify the magnitude of risk.
+ 
+Generally speaking, credit scores are based on historical data. Past models may lose their original predictive power. Logistic regression is one of the common predictors since it produces a binary target output. 
+ 
+At present, with the development of more machine learning algorithms, other predictive methods such as Random Forest, Support Vector Machines (SVC) etc. have been introduced into credit scoring. However, it is usually difficult with these methods to provide customers and regulators with a reason for rejection or acceptance.
+
+## Dataset Source
+<br>
+The study on credit card approval prediction was conducted using a free data set which was sourced from Kaggle. The data set originally consists of 2 separate csv files that are connected to each other via the 'ID' column.
+
+# Preparation, Initial Analysis, and Data Tidying:
+<br>
+The first csv file, application record.csv, consists of personal and socio-economic data that is related to an applicant and can usually help a bank decide whether to issue them a credit card or not. The second csv file, credit_record.csv, consists of past credit card usage behavior of an applicant. It consists of information such as defaults, payment due dates etc. We will perform a 'left join' to merge these two files and so that we are working with the right applicants and will get rid of the extra rows depending on the Null values. 
 ```{r}
 df <- merge(credit1, credit2, by = 'ID', all.x = TRUE)
 ```
 
 Checking NA values in the updated dataframe and performing cleanup in the dataframe columns. 
-
+'Occupation_type' variable has nearly 350000 NaN values in the original dataframe, along with 'Status' and 'months_balance' columns. We go ahead and clean these rows since there arleady are over a million rows in the data set. 
 ```{r}
-sum(is.na(df$OCCUPATION_TYPE)) # 'Occupation_type' has nearly 350000 na values in the original dataframe, along with 'Status' and 'months_balance'.
+sum(is.na(df$OCCUPATION_TYPE)) 
 # Removing the NA values from the above columns:
 new_df <- na.omit(df, c("STATUS", "MONTHS_BALANCE", "OCCUPATION_TYPE"))
 # Making sure the dataframe has distinct values: 
 df2 <- distinct(new_df, ID, .keep_all = TRUE)
 
 ```
-The above generated `data frame(df2)` has 25134 rows and 20 variables. 
+<br>
+After removing the NaN values from the three columns, we have generated a new data set with distinct ID values to make sure no two customers or applicants are the same. The generated `data frame(df2)` has 25134 rows and 20 variables. 
 
-Removing excess columns or ones that do not pertain to the target variable at all.  
+Removing excess columns or ones that do not pertain to the target variable at all.
+We have removed FLAG_EMAIL, FLAG_PHONE, FLAG_WORK_PHONE, DAYS_EMPLOYED, DAYS_BIRTH, ID, OCCUPATION_TYPE from the data set and renamed the rest of the columns to more generic values. 
+
 
 ```{r}
 df2 <- subset( df2, select = -c(FLAG_EMAIL, FLAG_PHONE, FLAG_WORK_PHONE, DAYS_EMPLOYED, DAYS_BIRTH, ID, OCCUPATION_TYPE))
@@ -68,6 +76,22 @@ df2 <- df2 %>% rename(gender = CODE_GENDER, owns_car = FLAG_OWN_CAR, owns_realty
 df2$months_due <- df2$months_due * (-1)
 
 ```
+
+The structure of the data frame is as follows: 
+
+gender : Gender of the applicant, 
+owns_car : Whether the customer owns a car or not,
+owns_realty : Whether the customer owns realty or not,
+children : Number of children,
+total_income : Total income of the customer, 
+employment_type : Employment type, 
+education_status : Education status of the customer,
+marital_status : Customers marital status,
+housing_type : Customers housing type, 
+owns_mobile : Whether the customer owns a mobile phone or not, 
+family_members : Number of family members of the customer,
+months_due : Months behind in payment, 
+status = Target variable or Status
 
 Converting all categorical values to ordinal/numeric values for further computation:
 
@@ -128,7 +152,7 @@ df2$status <- as.factor(df2$status)
 
 ## Target variable and Data set balancing
 
-The target variable 'status' has the following values:
+The target variable 'status' has the following categories:
 0: 1-29 days past due
 1: 30-59 days past due
 2: 60-89 days overdue
@@ -138,23 +162,28 @@ The target variable 'status' has the following values:
 C: paid off that month 
 X: No loan for the month
 
-Any Customers that are overdue for more than 60 days are marked as `risk` or 1 in the target variable. Other customers are marked as 0. 
-The target variable status has a binary outcome, 1 or 0, predicting if an applicant will be a `risk` or `not a risk`.
+Since the test model is based on Binomial Logistic regression, the STATUS column or the target variable has been divided into two separate categories - `risk` and `not a risk`. Customers that are overdue for more than 60 days are marked as `risk` or 1 in the target variable. All other customers are marked as 0. 
+
+The target variable - status now has a binary outcome, 1 or 0, predicting if an applicant will be a `risk` or `not a risk`.
 
 
 ```{r}
 table(df2$status)
 ```
+The contingency table above shows how the target variable is divided in two. 
 
-We can see that the dataset is highly unbalanced as there are 25068 customers that have paid off the debt and just 66 customers that are marked as 'risk'. The positive class (risk customers) just account for 0.263% of the overall dataset. 
+We can see that the dataset is highly unbalanced as there are 25068 customers that have paid off the debt or who are `not a risk` and just 66 customers that are marked as 'risk' or who have not yet paid off their debt. The positive class - 1(risk customers) just accounts for 0.263% of the overall dataset. This is extremely imbalanced and a model created with such a set will lead to majority of the values being classified as `not a risk` or 0.
 
-We will balance the dataset using a minority oversampling technique called `SMOTE: Synthetic Minority Oversampling Technique`. This technique uses  KNN or K-nearest neighbors algorithm to generate synthetic values of the under represented target variable. 
+We can balance the dataset using many techniques such as undersampling and oversampling. However, general oversampling of the data set in many cases leads to creation of duplicate values which the team is trying to avoid. 
+
+We will balance the dataset using a minority oversampling technique called `SMOTE: Synthetic Minority Oversampling Technique`. This technique uses  KNN or K-nearest neighbors algorithm to generate synthetic or artificial values of the under represented category in the target variable. The values that are generated using SMOTE are synthetic and are close to the actual values but not duplicates. 
 ```{r}
 library(DMwR)
 df2_bal <- SMOTE(status~., df2, perc.over=6000, perc.under=100, k = 5)
 table(df2_bal$status)
 ```
-Now, the data set is completely balanced with the target variable having 3960 customers marked as '0' or 'non risk' and 4026 customers marked as '1' or 'risk'. 
+<br>
+Now, the data set is completely balanced with the target variable having 3960 customers marked as '0' or 'not a risk' and 4026 customers marked as '1' or 'risk'. We can go ahead and check for data set normality in the balanced data set. 
 
 ## Checking data normality on the df2_bal set 
 ```{r}
@@ -166,9 +195,13 @@ pairs.panels(df2_bal,
              density = TRUE,  # show density plots
              ellipses = TRUE # show correlation ellipses
              )
-#unloadPkg(psych)
+unloadPkg(psych)
 ```
+<br>
+
 # Chi-squared tests
+
+We will perform Chi_Squared test to check for any relation between the target variable(y) and the independent variables. 
 
 ## To test if the data support that applicant's owned reality much affects status
 ```{r}
@@ -180,6 +213,8 @@ own_realty_status_table
 chisqres_own_realty = chisq.test(own_realty_status_table)
 chisqres_own_realty
 ```
+The p-value is significantly low suggesting that the target variable is dependent on the owns_realty variable. 
+
 ## To test if the data support that applicant's total income much affects status
 ```{R}
 totalincome_statustable = xtabs(~total_income + status, data = df2_bal)
@@ -189,6 +224,8 @@ totalincome_statustable
 chisqres_totalincome = chisq.test(totalincome_statustable)
 chisqres_totalincome
 ```
+The p-value is significantly low suggesting that the target variable is dependent on the total_income variable. 
+
 ## To test if the data support that applicant's marital status much affects status
 ```{R}
 maritalstatus_status_table = xtabs(~marital_status+status, data = df2_bal)
@@ -198,6 +235,8 @@ maritalstatus_status_table
 chisqres_maritalstatus = chisq.test(maritalstatus_status_table )
 chisqres_maritalstatus
 ```
+The p-value is significantly low suggesting that the target variable is dependent on the marital variable. 
+
 ## To test if the data support that applicant's education status much affects status
 ```{R}
 education_status_table = xtabs(~education_status + status, data = df2_bal)
@@ -207,6 +246,8 @@ education_status_table
 chisqres_education = chisq.test(education_status_table)
 chisqres_education 
 ```
+The p-value is significantly low suggesting that the target variable is dependent on the education_status variable. 
+
 ## To test if the data support that applicant's months_due much affects status
 ```{R}
 months_due_status_table = xtabs(~months_due + status, data = df2_bal)
@@ -216,11 +257,15 @@ months_due_status_table
 chisqres_monthsBalance = chisq.test(months_due_status_table)
 chisqres_monthsBalance
 ```
-### We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which rejects null Hypothesis. That means the five variables have no effect on status. 
+The p-value is significantly low suggesting that the target variable is dependent on the months_due variable. 
+
+### We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which allows us to reject the null Hypothesis. That means the five variables have a relation with 'status' variable or affect each other in some way or the other. 
 
 # Splitting the balanced set into Train/Test:
 
-Splitting the model into train and test data sets using the 'caTools' library:
+Splitting the model into train and test data sets using the 'caTools' library. This will allow us to train the model on one data set and then test its accuracy on the latter test set. We will split the data set in 80/20 ratio, where the train set is 80% of the data set anf test set is the remaining 20%.
+
+The rows are selected randomly by the 'caTools' library. 
 
 ```{r}
 library(caTools)
@@ -242,7 +287,7 @@ as.data.frame(table(train$status))
 model <- glm(status~., data = train, family = binomial)
 summary(model)
 ```
-
+Fitting the logistic regression model with the train data set.
 
 ## Predicting the target values using the generated model against the test data set:
 
@@ -250,8 +295,9 @@ summary(model)
 predict_set <- predict(model, test, type = 'response')
 ```
 
-Now, comparing the original values in the test set with the predicted values:
+Now, comparing the original values in the test data set with the predicted values.
 
+A contingency table lets us compare the results visually as in a confusion matrix. 
 ```{r}
 table(test$status, predict_set > 0.5)
 ```
@@ -259,15 +305,17 @@ table(test$status, predict_set > 0.5)
 * x axis - predicted values
  
 
-* 532 customers were predicted as 0 or not risk and 532 times they were predicted as not risk by the model.
+* 532 customers were predicted as 0 or not a risk and 532 customers were predicted as not risk by the model.
 * 255 customers were 1 or risk but 255 customers were predicted as not risk or 0 by the model.
 * 260 customers were 0 or not risk but 260 customers were predicted as risk or 1 by the model. 
-* 550 customers were 1 or risk and 550 times they were predicted as risk or 1 by the model. 
+* 550 customers were 1 or risk and 550 customers were predicted as risk or 1 by the model. 
 
 
 Now, calculating the Accuracy, precision and recall of the generated model:
 
-
+Accuracy = 0.678
+Precision = .679
+Recall = 0.683
 
 
 ```{r}
@@ -287,7 +335,9 @@ Accuracy = 0.678
 Precision = .679
 Recall = 0.683
 ```
+Accuracy of the model is 67.8% . 
 
+We will also generate the ROC and the AUC to evaluate the results. 
 
 ## Generating the ROC:
 ```{r}
@@ -303,9 +353,13 @@ auc(ROC_prob)
 
 ```
 
+Area under the curve: 0.713 
+
+A general rule to follow suggests that AUC or are under the curve should be 0.80 or above. Since 0.713 is close to 0.80, we will perform feature selection on the data set to select the variables with the highest variance on the set and then compare the accuracy of the model again!
+
 # Feature Selection:
   
-Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable:
+Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable.
 
 
 ## Performing Exhaustive Search  
@@ -328,24 +382,28 @@ summary(reg_best10)
 
 ```
 
-The plots above explain that 'owns_car', 'children', 'marital_status', 'months_due', 'owns_mobile' and 'total_income' cause the most variance on the target variable. 
+The plots above explain that variables: 'owns_car', 'children', 'marital_status', 'months_due', 'owns_mobile' and 'total_income' cause the most variance on the target variable. 
 
-We will go ahead and create a logistic model explaining how these selected variables have an effect on the target variable(status) and will compare the new models accuracy with the earlier model. 
+We will go ahead and create a logistic model explaining how these selected variables have an effect on the target variable(status) and will compare the new model's accuracy with the earlier model. 
 
 # Logit Model 2:
 
+The interaction term used here is (owns_car+children+marital_status+months_due+owns_mobile+total_income)
+The target variable is status
 ```{r logit_2}
 model_2 <- glm(status~(owns_car+children+marital_status+months_due+owns_mobile+total_income), data = train, family = binomial)
 summary(model_2)
 ```
+<br>
+Fitting the feature selected data set with the model. 
 
-Predicting the target values using the generated model against the test data set:
+Now, predicting the target values using the generated model against the test data set.
 
 ```{r}
 predict_set_2 <- predict(model_2, test, type = 'response')
 ```
 
-Now, comparing the original values in the test set with the newly generated predicted values:
+Comparing the original values in the test set with the newly generated predicted values using a contingency table. This gives us a visual aid that is similar to a confusion matrix. 
 
 ```{r}
 table(test$status, predict_set_2 > 0.5)
@@ -355,10 +413,10 @@ table(test$status, predict_set_2 > 0.5)
 
  
 
-* 488 customers were predicted as 0 or not risk and 488 times they were predicted as not risk by the model.
+* 488 customers were predicted as 0 or not risk and 488 customers were predicted as not risk by the model.
 * 328 customers were 1 or risk but 328 customers were predicted as not risk or 0 by the model.
 * 304 customers were 0 or not risk but 304 customers were predicted as risk or 1 by the model. 
-* 477 customers were 1 or risk and 477 times they were predicted as risk or 1 by the model. 
+* 477 customers were 1 or risk and 477 customers were predicted as risk or 1 by the model. 
 
 
 Now, calculating the Accuracy, precision and recall of the generated model:
@@ -383,8 +441,11 @@ Accuracy = .604
 Precision = .611
 Recall = .519
 ```
+<br>
+This performed worse than the original model. Hence, we will stick with the original model for the prediction.
+The general reason why the accuracy of a feature selected model decreases is because during dimensionality reduction we are essentially reducing the size of the data set and that affects the overall accuracy of the model as compared to the original model. 
 
-This surprisingly performed worse than the original model. Hence, we will stick with the original model for the prediction.
+Hence, this will also affect the ROC/AUC numbers. 
 
 ## Generating the ROC:
 ```{r}
@@ -398,11 +459,30 @@ auc(ROC_prob_2)
 
 
 ```
+<br>
+Area under the curve: 0.62. This is much lower than 0.80. We will stick with the original model over the feature selected one. 
+
+However, there is still some information that are able to gather from the above analysis! Feature selection using Adjusted R Squared showed us the variables that have the most effect on the target variable or the dependent variable. We can use that information for other purposes. 
 
 # Classification Tree Modeling:
+<br>
+Generating a Classification Tree Model using the balanced data set for feature selected variables!
 
-Generating a Classification Tree Model for the balanced data set. 
+We fit the data set using the model and the generate predicted values for the test set and compare it to the original y_test values. 
 
+We find below that the mis-classification error rate is extremely small with a value of 0.0854
+and the confusion matrix looks like: 
+
+*         status.test
+*           0   1
+*        0 776 116
+*        1  16 689
+
+* 776 customers were predicted as 0 or not a risk and 776 customers were predicted as not risk by the model.
+* 16 customers were 1 or risk but 16 customers were predicted as not risk or 0 by the model.
+* 116 customers were 0 or not risk but 116 customers were predicted as risk or 1 by the model. 
+* 689 customers were 1 or risk and 689 customers were predicted as risk or 1 by the model. 
+        
 
 ```{r}
 # Fitting a Classification Tree
@@ -445,7 +525,19 @@ plot(cv.credit$k, cv.credit$dev, type = "b")
 #tree.pred2 <- predict(prune.credit , test , type = "class")
 #table(tree.pred2 ,status.test)
 ```
-In this case, we won't prune tree because it is already the best choice.
+<br>
+In this case, we will not prune the tree because it is already the best choice.
 
-`Model generates a 91% accuracy which is much higher than the Logit models.`
+The model performs better than the above two Logistic Regression models and generates approximately a 91% accuracy!
 
+
+# Conclusion
+<br>
+* Classification Tree Model is best suited for this category of data set.
+* The AUC of LOGIT models were 0.71 and 0.62. This is below our goal of 0.80 or above. 
+* Data set balancing is required to create a well performing model. Without a balanced data set, the model can undergo misclassification. 
+* Chi-Squared test was performed to find any relation between the dependent variable(y) and the regressors. 
+* From Logit Models and Feature Selection, it is observed that factors like Previous Months Balance, Marital Status of a Customer, whether they own a Car and a Mobile Phone, and Number of Children generally increases the likelihood of that Customer being issued a credit card by a bank! 
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------

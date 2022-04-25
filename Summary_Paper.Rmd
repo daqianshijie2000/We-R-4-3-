@@ -533,7 +533,7 @@ The model performs better than the above two Logistic Regression models and gene
 
 # Conclusion:
 <br>
-After we tested different statistics methods in the dataset, below is our findings based on what we have been performacing in the dataset. 
+After we used different statistics methods in the dataset, below are our findings based on what we have been performacing ...
 
 * Balancing the dataset is required to create a well performing model. Without a balanced dataset, the model can undergo misclassification. 
 * Chi-Squared test was performed to find any relation between the dependent variable(y) and the regressors. The null model was rejected in all cases. 

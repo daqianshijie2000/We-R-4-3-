@@ -201,9 +201,9 @@ unloadPkg(psych)
 
 # Chi-squared tests
 
-We will perform Chi-Squared test to check for any relation between the target variable(y) and the independent variables. 
+The basic purpose of the chi-squared test used in the dataset is that we want to investigate whether the test of independence can be used to examine the relationship between the Status as the target variable or the binary variable (y) and other independent variables. We decided to select five independent variables, an applicant’s owned realty, an applicant’s total income, an applicant’s marital status, an applicant’s education status, and an applicant’s monthly balance due, to test if the relationship between the binary variable "Status" and other five variables are independent. 
 
-## To test if the data support that applicant's owned reality much affects status
+## To test if the data support that applicant's owned realty much affects status
 ```{r}
 
 own_realty_status_table = xtabs(~owns_realty+status, data = df2_bal)
@@ -213,7 +213,7 @@ own_realty_status_table
 chisqres_own_realty = chisq.test(own_realty_status_table)
 chisqres_own_realty
 ```
-The p-value is significantly low suggesting that the target variable is dependent on the owns_realty variable. 
+The p-value is significantly low suggesting that the target variable is dependent of the owns_realty variable. 
 
 ## To test if the data support that applicant's total income much affects status
 ```{R}
@@ -224,7 +224,7 @@ totalincome_statustable
 chisqres_totalincome = chisq.test(totalincome_statustable)
 chisqres_totalincome
 ```
-The p-value is significantly low suggesting that the target variable is dependent on the total_income variable. 
+The p-value shows significantly low suggesting that the target variable is dependent of the total_income variable. 
 
 ## To test if the data support that applicant's marital status much affects status
 ```{R}
@@ -235,7 +235,7 @@ maritalstatus_status_table
 chisqres_maritalstatus = chisq.test(maritalstatus_status_table )
 chisqres_maritalstatus
 ```
-The p-value is significantly low suggesting that the target variable is dependent on the marital variable. 
+The p-value displays significantly low suggesting that the target variable is dependent of the marital variable. 
 
 ## To test if the data support that applicant's education status much affects status
 ```{R}
@@ -246,7 +246,7 @@ education_status_table
 chisqres_education = chisq.test(education_status_table)
 chisqres_education 
 ```
-The p-value is significantly low suggesting that the target variable is dependent on the education_status variable. 
+The p-value is significantly low suggesting that the target variable is dependent of the education_status variable. 
 
 ## To test if the data support that applicant's months_due much affects status
 ```{R}
@@ -257,9 +257,9 @@ months_due_status_table
 chisqres_monthsBalance = chisq.test(months_due_status_table)
 chisqres_monthsBalance
 ```
-The p-value is significantly low suggesting that the target variable is dependent on the months_due variable. 
+The p-value shows significantly low suggesting that the target variable is dependent of the months_due variable. 
 
-### We used chi-square to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with status. Their p-values are smaller than 0.05, which allows us to reject the null Hypothesis. That means the five variables have a relation with 'status' variable or affect each other in some way or the other. 
+## We used chi-square as the test of independence to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with the binary variable "Statu"s. As a result, their p-values are extremelly smaller than 0.05, which allows us to reject the null Hypothesis. That means the five variables have a significant relation with 'status' variable or affect each other in some ways. 
 
 # Splitting the balanced set into Train/Test:
 
@@ -355,11 +355,11 @@ auc(ROC_prob)
 
 Area under the curve: 0.713 
 
-A general rule to follow suggests that AUC or are under the curve should be 0.80 or above. Since 0.713 is close to 0.80, we will perform feature selection on the data set to select the variables with the highest variance on the set and then compare the accuracy of the model again!
+A general rule to follow suggesting that AUC or are under the curve should be 0.80 or above. Since 0.713 is close to 0.80, we will perform feature selection on the data set to select the variables with the highest variance on the set and then compare the accuracy of the model again!
 
 # Feature Selection:
   
-Now, performing feature selection on the data set to select ideal variables that cause a variation in the target variable.
+The purpose of feature selection is the process of analyzing a subset of a dataset or identifying key elements or series of a data to use in a model. Now, we want to perform feature selection on the dataset to select ideal variables that cause a variation in the target variable.
 
 
 ## Performing Exhaustive Search  
@@ -382,7 +382,7 @@ summary(reg_best10)
 
 ```
 
-The plots above explain that variables: 'owns_car', 'children', 'marital_status', 'months_due', 'owns_mobile' and 'total_income' cause the most variance on the target variable. 
+The plots indicate above suggusting that the ideal variables: 'owns_car', 'children', 'marital_status', 'months_due', 'owns_mobile' and 'total_income', which cause the most variance on the target variable. 
 
 We will go ahead and create a logistic model explaining how these selected variables have an effect on the target variable(status) and will compare the new model's accuracy with the earlier model. 
 
@@ -442,7 +442,7 @@ Precision = .611
 Recall = .519
 ```
 <br>
-This performed worse than the original model. Hence, we will stick with the original model for the prediction.
+This model performed worse than the original model. Hence, we will stick with the original model for the prediction.
 The general reason why the accuracy of a feature selected model decreases is because during dimensionality reduction we are essentially reducing the size of the data set and that affects the overall accuracy of the model as compared to the original model. 
 
 Hence, this will also affect the ROC/AUC numbers. 
@@ -466,9 +466,9 @@ However, there is still some information that are able to gather from the above 
 
 # Classification Tree Modeling:
 <br>
-Generating a Classification Tree Model using the balanced data set for feature selected variables!
+A classification tree defines as a structural mapping of binary decisions that lead to a decision about the class of an object. This is more properly a type of decision tree that leads to categorical decisions. Hence, we try to generate a Classification Tree Model using the balanced dataset for feature selected variables!
 
-We fit the data set using the model and the generate predicted values for the test set and compare it to the original y_test values. 
+We fit the dataset using the model and the generate predicted values for the test set and compare it to the original y_test values. 
 
 We find below that the mis-classification error rate is extremely small with a value of 0.0854
 and the confusion matrix looks like: 
@@ -533,12 +533,13 @@ The model performs better than the above two Logistic Regression models and gene
 
 # Conclusion:
 <br>
+After we tested different statistics methods in the dataset, below is our findings based on what we have been performacing in the dataset. 
 
-* Classification Tree Model is best suited for this category of data set.
-* The AUC of LOGIT models were 0.71 and 0.62. This is below our goal of 0.80 or above. 
-* Data set balancing is required to create a well performing model. Without a balanced data set, the model can undergo misclassification. 
+* Balancing the dataset is required to create a well performing model. Without a balanced dataset, the model can undergo misclassification. 
 * Chi-Squared test was performed to find any relation between the dependent variable(y) and the regressors. The null model was rejected in all cases. 
-* From Logit Models and Feature Selection, it is observed that factors like Previous Months Balance, Marital Status of a Customer, whether they own a Car and a Mobile Phone, and Number of Children generally increases the likelihood of that Customer being issued a credit card by a bank! 
+* The two AUC of Logit models were 0.71 and 0.62. the both results are below our goal of 0.80 or above. 
+* Classification Tree Model is the best suited for this category of dataset as this model result showed 91% accuracy rate.
+* From observing the results of Logit Models and Feature Selection, we might say that these factors like previous months balance and marital status of a customer, whether they owning a car and a mobile phone, and having number of children generally increase the likelihood of that customer being issued a credit card by a bank. 
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------

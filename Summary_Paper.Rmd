@@ -201,7 +201,7 @@ unloadPkg(psych)
 
 # Chi-squared tests
 
-The basic purpose of the chi-squared test used in the dataset is that we want to investigate whether the test of independence can be used to examine the relationship between the Status as the target variable or the binary variable (y) and other independent variables. We decided to select five independent variables, an applicant’s owned realty, an applicant’s total income, an applicant’s marital status, an applicant’s education status, and an applicant’s monthly balance due, to test if the relationship between the binary variable "Status" and other five variables are independent. 
+The basic purpose of the chi-squared test used for the data set is that we wanted to investigate whether the test of independence can be used to examine the relationship between the Status as the target variable or the binary variable (y) and other independent variables. We decided to select five independent variables, an applicant’s ownership of realty, an applicant’s total income, an applicant’s marital status, an applicant’s education status, and an applicant’s monthly balance due, to test if the relationship between the binary variable "Status" and other five variables are independent. 
 
 ## To test if the data support that applicant's owned realty much affects status
 ```{r}
@@ -259,11 +259,11 @@ chisqres_monthsBalance
 ```
 The p-value shows significantly low suggesting that the target variable is dependent of the months_due variable. 
 
-## We used chi-square as the test of independence to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with the binary variable "Statu"s. As a result, their p-values are extremelly smaller than 0.05, which allows us to reject the null Hypothesis. That means the five variables have a significant relation with 'status' variable or affect each other in some ways. 
+We used chi-square as the test of independence to test five variables, owns_realty, total_income, marital_status, education_status, and months_due, with the binary variable "Status". As a result, their p-values are extremely smaller than 0.05, which allows us to reject the null Hypothesis. That means the five variables have a significant relation with 'status' variable or affect each other in some ways. 
 
 # Splitting the balanced set into Train/Test:
 
-Splitting the model into train and test data sets using the 'caTools' library. This will allow us to train the model on one data set and then test its accuracy on the latter test set. We will split the data set in 80/20 ratio, where the train set is 80% of the data set anf test set is the remaining 20%.
+Splitting the model into train and test data sets using the 'caTools' library. This will allow us to train the model on one data set and then test its accuracy on the latter test set. We will split the data set in 80/20 ratio, where the train set is 80% of the data set and test set is the remaining 20%.
 
 The rows are selected randomly by the 'caTools' library. 
 
@@ -335,7 +335,7 @@ Accuracy = 0.678
 Precision = .679
 Recall = 0.683
 ```
-Accuracy of the model is 67.8% . 
+Accuracy of the model is `67.8%`. 
 
 We will also generate the ROC and the AUC to evaluate the results. 
 
@@ -353,7 +353,7 @@ auc(ROC_prob)
 
 ```
 
-Area under the curve: 0.713 
+Area under the curve: `0.713` 
 
 A general rule to follow suggesting that AUC or are under the curve should be 0.80 or above. Since 0.713 is close to 0.80, we will perform feature selection on the data set to select the variables with the highest variance on the set and then compare the accuracy of the model again!
 
@@ -533,9 +533,9 @@ The model performs better than the above two Logistic Regression models and gene
 
 # Conclusion:
 <br>
-After we used different statistics methods in the dataset, below are our findings based on what we have been performacing ...
+After we used different statistical methods for the data set, below are our findings based on the different models generated:
 
-* Balancing the dataset is required to create a well performing model. Without a balanced dataset, the model can undergo misclassification. 
+* Balancing the data set is required to create a well performing model. Without a balanced data set, the model can undergo misclassification. 
 * Chi-Squared test was performed to find any relation between the dependent variable(y) and the regressors. The null model was rejected in all cases. 
 * The two AUC of Logit models were 0.71 and 0.62. the both results are below our goal of 0.80 or above. 
 * Classification Tree Model is the best suited for this category of dataset as this model result showed 91% accuracy rate.
